@@ -63,7 +63,7 @@ JWT_SECRET=your_super_secret_jwt_key
 ```
 
 Start the backend server (defaults to `http://localhost:5000`):
-```bash
+```bash 
 npm run dev
 ```
 
