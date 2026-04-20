@@ -1,11 +1,13 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const path = require('path');
-require('dotenv').config();
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import path from 'path';
+import dotenv from 'dotenv';
 
-const authRoutes = require('../routes/authRoutes');
-const transactionRoutes = require('../routes/transactionRoutes');
+dotenv.config();
+
+import authRoutes from '../routes/authRoutes.js';
+import transactionRoutes from '../routes/transactionRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
