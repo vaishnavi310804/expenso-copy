@@ -10,13 +10,7 @@ const generateToken = (id) => {
   });
 };
 
-/* =========================================================
-   AUTHENTICATION CONTROLLERS
-   ========================================================= */
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password, profilePic } = req.body;
@@ -60,9 +54,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// @desc    Authenticate a user
-// @route   POST /api/auth/login
-// @access  Public
+
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -86,9 +78,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// @desc    Get user data including transactions
-// @route   GET /api/auth/me
-// @access  Private
+
 export const getUserProfile = async (req, res) => {
   try {
     const transactions = await Transaction.find({ user: req.user.id }).sort({ createdAt: -1 });
@@ -102,13 +92,7 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
-/* =========================================================
-   TRANSACTION CONTROLLERS
-   ========================================================= */
 
-// @desc    Get all transactions for user
-// @route   GET /api/transactions
-// @access  Private
 export const getTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.find({ user: req.user.id });
@@ -119,14 +103,11 @@ export const getTransactions = async (req, res) => {
   }
 };
 
-// @desc    Get analytics for dashboard
-// @route   GET /api/transactions/analytics
-// @access  Private
+
 export const getAnalytics = async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.user.id);
     
-    // Fallback logic for date boundaries
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -251,9 +232,6 @@ export const getAnalytics = async (req, res) => {
   }
 };
 
-// @desc    Create new transaction
-// @route   POST /api/transactions
-// @access  Private
 export const createTransaction = async (req, res) => {
   try {
     const { label, amount, date, icon } = req.body;
@@ -277,9 +255,7 @@ export const createTransaction = async (req, res) => {
   }
 };
 
-// @desc    Update a transaction
-// @route   PUT /api/transactions/:id
-// @access  Private
+
 export const updateTransaction = async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id);
@@ -305,9 +281,7 @@ export const updateTransaction = async (req, res) => {
   }
 };
 
-// @desc    Delete a transaction
-// @route   DELETE /api/transactions/:id
-// @access  Private
+
 export const deleteTransaction = async (req, res) => {
   try {
     const transaction = await Transaction.findById(req.params.id);
