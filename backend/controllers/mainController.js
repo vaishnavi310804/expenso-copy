@@ -107,9 +107,18 @@ export const getTransactions = async (req, res) => {
 export const getAnalytics = async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.user.id);
+    const { month } = req.query;
     
-    const now = new Date();
+    let now;
+    if (month) {
+      const [yearStr, monthStr] = month.split('-');
+      now = new Date(Number(yearStr), Number(monthStr) - 1, 15);
+    } else {
+      now = new Date();
+    }
+    
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
     const analytics = await Transaction.aggregate([
@@ -122,7 +131,7 @@ export const getAnalytics = async (req, res) => {
       {
         $facet: {
           currentMonth: [
-            { $match: { parsedDate: { $gte: currentMonthStart } } },
+            { $match: { parsedDate: { $gte: currentMonthStart, $lt: nextMonthStart } } },
             {
               $group: {
                 _id: null,
@@ -132,7 +141,7 @@ export const getAnalytics = async (req, res) => {
             }
           ],
           categoryDistribution: [
-            { $match: { parsedDate: { $gte: currentMonthStart }, amount: { $lt: 0 } } },
+            { $match: { parsedDate: { $gte: currentMonthStart, $lt: nextMonthStart }, amount: { $lt: 0 } } },
             { $group: { _id: "$label", amount: { $sum: { $abs: "$amount" } } } },
             { $sort: { amount: -1 } }
           ],
