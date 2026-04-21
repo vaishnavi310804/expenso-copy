@@ -1,24 +1,43 @@
 import React from 'react';
 import { IoBulbOutline, IoTrendingDownOutline, IoTrendingUpOutline, IoWarningOutline } from 'react-icons/io5';
+import { FiCpu } from 'react-icons/fi';
 
 const InsightsList = ({ insights, predictedExpense, theme }) => {
   return (
-    <div className={`p-6 rounded-2xl shadow-xl border transition-all h-full ${theme ? 'bg-gray-800 border-gray-700' : 'bg-white border-purple-50'}`}>
-      <div className="flex items-center gap-2 mb-6 text-purple-600 dark:text-purple-400">
-        <IoBulbOutline size={26} />
+    <div className={`p-6 sm:p-8 rounded-3xl border h-full flex flex-col transition-all duration-300 ${theme ? 'bg-[#0f172a] border-gray-800' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/40'}`}>
+      
+      <div className="flex items-center gap-3 mb-6">
+        <div className={`p-2.5 rounded-xl ${theme ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-600'}`}>
+          <IoBulbOutline size={24} />
+        </div>
         <h3 className="text-xl font-bold tracking-tight">Smart Insights</h3>
       </div>
       
-      <div className={`mb-6 p-4 rounded-xl border ${theme ? 'bg-indigo-900/20 border-indigo-700/30' : 'bg-indigo-50 border-indigo-200'}`}>
-        <p className={`text-sm font-semibold mb-1 ${theme ? 'text-gray-400' : 'text-gray-600'}`}>AI Prediction (Based on last 3 months)</p>
-        <p className={`text-2xl font-bold ${theme ? 'text-indigo-300' : 'text-indigo-700'}`}>
-          ₹{predictedExpense.toLocaleString()} <span className={`text-sm font-medium ${theme ? 'text-gray-500' : 'text-gray-600'}`}>Expected Expense Next Month</span>
-        </p>
+      {/* AI Prediction Box */}
+      <div className={`relative overflow-hidden mb-8 p-6 rounded-2xl border transition-all duration-300 ${theme ? 'bg-gradient-to-br from-indigo-900/40 to-blue-900/20 border-indigo-500/20' : 'bg-gradient-to-br from-indigo-50 to-blue-50/50 border-indigo-100'}`}>
+        <div className="absolute -right-4 -top-4 opacity-10">
+          <FiCpu size={100} />
+        </div>
+        <div className="relative z-10">
+          <div className={`flex items-center gap-2 mb-2 text-sm font-semibold tracking-wide uppercase ${theme ? 'text-indigo-400' : 'text-indigo-600'}`}>
+            <FiCpu /> AI Prediction Model
+          </div>
+          <p className={`text-3xl font-extrabold mb-1 tracking-tight ${theme ? 'text-white' : 'text-gray-900'}`}>
+            ₹{predictedExpense.toLocaleString()}
+          </p>
+          <p className={`text-sm font-medium ${theme ? 'text-indigo-300/80' : 'text-indigo-600/80'}`}>
+            Expected expense mapping for next month
+          </p>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3 overflow-y-auto max-h-[200px] pr-2 custom-scrollbar">
+      <h4 className={`text-xs font-bold uppercase tracking-widest mb-4 ${theme ? 'text-gray-500' : 'text-gray-400'}`}>Recent Observations</h4>
+
+      <div className="flex flex-col gap-3 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
         {insights.length === 0 ? (
-          <p className="text-gray-500 text-sm">Not enough data to generate insights yet. Keep adding transactions!</p>
+          <div className="py-10 text-center text-gray-400 text-sm">
+            Not enough data to map patterns yet. Keep adding transactions!
+          </div>
         ) : (
           insights.map((msg, i) => {
             let colorClass = '';
@@ -26,23 +45,23 @@ const InsightsList = ({ insights, predictedExpense, theme }) => {
             
             if (msg.includes('less on')) {
               colorClass = theme 
-                ? 'text-emerald-300 bg-emerald-900/20 border-emerald-800' 
-                : 'text-emerald-800 bg-emerald-50 border-emerald-200';
+                ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' 
+                : 'text-emerald-700 bg-emerald-50 border-emerald-100';
               Icon = IoTrendingDownOutline;
             } else if (msg.includes('more on') || msg.includes('Warning')) {
               colorClass = theme 
-                ? 'text-rose-300 bg-rose-900/20 border-rose-800' 
-                : 'text-rose-800 bg-rose-50 border-rose-200';
+                ? 'text-rose-400 bg-rose-500/10 border-rose-500/20' 
+                : 'text-rose-700 bg-rose-50 border-rose-100';
               Icon = msg.includes('Warning') ? IoWarningOutline : IoTrendingUpOutline;
             } else {
               colorClass = theme 
-                ? 'text-blue-300 bg-blue-900/20 border-blue-800' 
-                : 'text-blue-800 bg-blue-50 border-blue-200';
+                ? 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' 
+                : 'text-indigo-700 bg-indigo-50 border-indigo-100';
             }
 
             return (
-              <div key={i} className={`p-4 border rounded-xl flex gap-3 items-start ${colorClass}`}>
-                <div className="mt-0.5"><Icon size={18} /></div>
+              <div key={i} className={`p-4 border rounded-2xl flex gap-4 items-start transition-all hover:-translate-y-0.5 ${colorClass}`}>
+                <div className="mt-0.5"><Icon size={20} /></div>
                 <p className="text-sm font-medium leading-relaxed">{msg}</p>
               </div>
             );

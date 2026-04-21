@@ -1,222 +1,199 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useData } from "../context/DataContext";
+import { UserContext } from "../context/UserContext";
 import api from "../api/axiosConfig";
+import { FiX } from "react-icons/fi";
+
+const ICONS = ["🛍️", "💻", "🛒", "💼", "🍽️", "🏠", "🚗", "💊", "📚", "🎬", "⚡", "🚆", "🎁"];
 
 const AddExpenseForm = ({ onClose }) => {
-  const {
-    userData,
-    currentUserEmail,
-    updateTransactions,
-    editableExpenseData,
-  } = useData();
-
-useEffect(() => {
-  if (editableExpenseData) {
-    const cleanDate = editableExpenseData.date.replace(/(\d+)(st|nd|rd|th)/, "$1");
-    const parsedDate = new Date(cleanDate);
-
-    if (isNaN(parsedDate.getTime())) {
-      console.error("Invalid date:", cleanDate);
-      return;
-    }
-
-    const isoDate = parsedDate.toISOString().split("T")[0];
-
-    setForm({
-      category: editableExpenseData.label || "",
-      amount: Math.abs(editableExpenseData.amount) || "",
-      icon: editableExpenseData.icon || "",
-      date: isoDate,
-    });
-  }
-}, []);
-
+  const { userData, currentUserEmail, updateTransactions, editableExpenseData, setEditableExpenseData } = useData();
+  const { theme } = useContext(UserContext);
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     category: "",
     amount: "",
     date: "",
-    icon: "",
+    icon: ICONS[0],
   });
 
+  useEffect(() => {
+    if (editableExpenseData) {
+      const isoDate = new Date(editableExpenseData.date).toISOString().split("T")[0];
+      setForm({
+        category: editableExpenseData.label || "",
+        amount: Math.abs(editableExpenseData.amount) || "",
+        icon: editableExpenseData.icon || ICONS[0],
+        date: isoDate,
+      });
+    }
+  }, [editableExpenseData]);
+
   const changeHandler = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const navigate = useNavigate();
+  const handleCancel = () => {
+    setEditableExpenseData(null);
+    if (onClose) onClose();
+    navigate("/expense");
+  };
 
   const submitHandler = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    const newExpenseAmount = Math.abs(parseFloat(form.amount));
 
-  const existing = userData[currentUserEmail]?.transactions || [];
+    if (!editableExpenseData) {
+      const existing = userData[currentUserEmail]?.transactions || [];
+      const balance = existing.reduce((acc, t) => acc + t.amount, 0);
 
-  const totalIncome = existing
-    .filter((t) => t.amount > 0)
-    .reduce((acc, t) => acc + t.amount, 0);
-
-  const totalExpenses = existing
-    .filter((t) => t.amount < 0)
-    .reduce((acc, t) => acc + Math.abs(t.amount), 0);
-
-  const balance = totalIncome - totalExpenses;
-  const newExpenseAmount = Math.abs(parseFloat(form.amount));
-
-  if (newExpenseAmount > balance) {
-    toast.error("Expense exceeds your available balance!", { autoClose: 2000 });
-
-    setTimeout(() => {
-      navigate("/expense");
-    }, 1600);
-
-    return;
-  }
-
-  const formatDate = (isoDate) => {
-    const dateObj = new Date(isoDate);
-    const day = dateObj.getDate();
-    const month = dateObj.toLocaleString("default", { month: "short" });
-    const year = dateObj.getFullYear();
-
-    const getDaySuffix = (d) => {
-      if (d > 3 && d < 21) return "th";
-      switch (d % 10) {
-        case 1: return "st";
-        case 2: return "nd";
-        case 3: return "rd";
-        default: return "th";
+      if (newExpenseAmount > balance) {
+        toast.error("Expense exceeds available balance!", { autoClose: 2500 });
+        return;
       }
+    }
+
+    const payload = {
+      amount: -newExpenseAmount,
+      label: form.category,
+      date: new Date(form.date).toISOString(),
+      icon: form.icon,
     };
 
-    return `${day}${getDaySuffix(day)} ${month} ${year}`;
-  };
-
-  const formattedDate = formatDate(form.date);
-
-  const newExpense = {
-    amount: -newExpenseAmount,
-    label: form.category,
-    date: formattedDate,
-    icon: form.icon,
-  };
-
-  try {
-    if (editableExpenseData && editableExpenseData._id) {
-      await api.put(`/transactions/${editableExpenseData._id}`, newExpense);
-    } else {
-      await api.post('/transactions', newExpense);
+    try {
+      if (editableExpenseData && editableExpenseData._id) {
+        await api.patch(`/transactions/${editableExpenseData._id}`, payload);
+        toast.success("Expense Updated");
+      } else {
+        await api.post("/transactions", payload);
+        toast.success("Expense Added");
+      }
+      await updateTransactions();
+      setEditableExpenseData(null);
+      setForm({ category: "", amount: "", date: "", icon: ICONS[0] });
+      if (onClose) onClose();
+      navigate("/expense");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save expense");
     }
-    
-    updateTransactions(); // Refresh transactions from backend
-
-  } catch (error) {
-    console.error("Failed to save expense:", error);
-    toast.error("Failed to save expense", { autoClose: 2000 });
-    return;
-  }
-
-  toast.success("Expense Added", { autoClose: 1000 });
-  setForm({ category: "", amount: "", date: "", icon: "" });
-
-  if (onClose) onClose();
-  navigate("/expense");
-};
-
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-      <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg relative">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800">
-          Add Expense
-        </h2>
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4 transition-all opacity-100">
+      <div className={`w-full max-w-lg p-8 rounded-3xl shadow-2xl relative transition-all translate-y-0 scale-100 ${
+        theme ? "bg-[#0f172a] border border-gray-800 text-white" : "bg-white border border-gray-100 text-gray-900"
+      }`}>
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-bold tracking-tight">
+            {editableExpenseData ? "Update Expense" : "New Expense"}
+          </h2>
+          <button
+            type="button"
+            onClick={handleCancel}
+            className={`p-2 rounded-full transition-colors ${theme ? "hover:bg-gray-800 text-gray-400" : "hover:bg-gray-100 text-gray-500"}`}
+          >
+            <FiX size={24} />
+          </button>
+        </div>
 
-        <form onSubmit={submitHandler}>
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 font-medium mb-1"
-              htmlFor="icon"
-            >
-              Select an icon
-            </label>
-            <select
-              name="icon"
-              id="icon"
-              value={form.icon}
-              onChange={changeHandler}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md"
-              required
-            >
-              <option value="🛍️">🛍️</option>
-              <option value="💻">💻</option>
-              <option value="🛒">🛒</option>
-              <option value="💼">💼</option>
-              <option value="🍽️">🛍️</option>
-              <option value="🍽️">🍽️</option>
-            </select>
+        <form onSubmit={submitHandler} className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label className={`block text-sm font-semibold mb-2 tracking-wide ${theme ? "text-gray-400" : "text-gray-600"}`}>
+                Icon
+              </label>
+              <div className="relative">
+                <select
+                  name="icon"
+                  value={form.icon}
+                  onChange={changeHandler}
+                  className={`w-full appearance-none px-4 py-3.5 text-2xl text-center rounded-2xl border transition-all duration-200 outline-none focus:ring-4 focus:border-rose-500 ${
+                    theme ? "bg-gray-900 border-gray-700 text-white focus:ring-rose-500/20" : "bg-gray-50 border-gray-200 text-gray-900 focus:ring-rose-500/20"
+                  }`}
+                  required
+                >
+                  {ICONS.map((ic) => (
+                    <option key={ic} value={ic}>{ic}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className={`block text-sm font-semibold mb-2 tracking-wide ${theme ? "text-gray-400" : "text-gray-600"}`}>
+                Date
+              </label>
+              <input
+                type="date"
+                name="date"
+                value={form.date}
+                onChange={changeHandler}
+                className={`w-full px-4 py-3.5 rounded-2xl border transition-all duration-200 outline-none focus:ring-4 focus:border-rose-500 ${
+                  theme ? "bg-gray-900 border-gray-700 text-white focus:ring-rose-500/20" : "bg-gray-50 border-gray-200 text-gray-900 focus:ring-rose-500/20"
+                }`}
+                required
+              />
+            </div>
           </div>
 
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 font-medium mb-1"
-              htmlFor="category"
-            >
-              Category
+          <div>
+            <label className={`block text-sm font-semibold mb-2 tracking-wide ${theme ? "text-gray-400" : "text-gray-600"}`}>
+              Category / Label
             </label>
             <input
               type="text"
               name="category"
-              placeholder="Rent, Freelance, Salary etc."
+              placeholder="e.g. Grocery, Electricity Bill"
               value={form.category}
               onChange={changeHandler}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md placeholder:text-sm"
+              className={`w-full px-4 py-3.5 rounded-2xl border transition-all duration-200 outline-none focus:ring-4 focus:border-rose-500 placeholder-gray-400 ${
+                theme ? "bg-gray-900 border-gray-700 text-white focus:ring-rose-500/20" : "bg-gray-50 border-gray-200 text-gray-900 focus:ring-rose-500/20"
+              }`}
               required
             />
           </div>
 
-          <div className="mb-4">
-            <label
-              className="block text-gray-700 font-medium mb-1"
-              htmlFor="amount"
-            >
-              Amount
+          <div>
+            <label className={`block text-sm font-semibold mb-2 tracking-wide ${theme ? "text-gray-400" : "text-gray-600"}`}>
+              Amount (₹)
             </label>
-            <input
-              type="number"
-              name="amount"
-              id="amount"
-              placeholder="₹ Amount"
-              value={form.amount}
-              onChange={changeHandler}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md"
-              required
-            />
+            <div className="relative">
+              <span className={`absolute left-4 top-1/2 -translate-y-1/2 font-bold ${theme?"text-gray-500":"text-gray-400"}`}>₹</span>
+              <input
+                type="number"
+                name="amount"
+                placeholder="0.00"
+                value={form.amount}
+                onChange={changeHandler}
+                min="0.01"
+                step="0.01"
+                className={`w-full pl-10 pr-4 py-3.5 rounded-2xl border text-xl font-semibold transition-all duration-200 outline-none focus:ring-4 focus:border-rose-500 ${
+                  theme ? "bg-gray-900 border-gray-700 text-white focus:ring-rose-500/20" : "bg-gray-50 border-gray-200 text-rose-600 focus:ring-rose-500/20"
+                }`}
+                required
+              />
+            </div>
           </div>
 
-          <div className="mb-6">
-            <label
-              className="block text-gray-700 font-medium mb-1"
-              htmlFor="date"
+          <div className="pt-4 flex gap-3">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className={`flex-1 py-4 font-semibold rounded-2xl transition duration-200 ${
+                theme ? "bg-gray-800 text-white hover:bg-gray-700" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
             >
-              Date
-            </label>
-            <input
-              type="date"
-              name="date"
-              id="date"
-              value={form.date}
-              onChange={changeHandler}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md"
-              required
-            />
-          </div>
-
-          <div className="text-right">
+              Cancel
+            </button>
             <button
               type="submit"
-              className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition"
+              className="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-2xl shadow-lg shadow-rose-500/30 transition duration-200"
             >
-              {editableExpenseData ? "Update Expense" : "Add Expense"}
+              {editableExpenseData ? "Save Changes" : "Save Expense"}
             </button>
           </div>
         </form>

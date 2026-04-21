@@ -1,96 +1,112 @@
 import React, { useContext } from "react";
 import Navbar from "../components/Navbar";
-import { FaWallet, FaChartPie, FaMoneyBillWave } from "react-icons/fa";
 import { UserContext } from "../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { FaArrowRight } from "react-icons/fa";
+import { FiPieChart, FiTrendingUp, FiShield } from "react-icons/fi";
 
 const Home = () => {
-  const { isAuthenticated, setIsAuthenticated } = useContext(UserContext);
-  const { theme } = useContext(UserContext);
+  const { isAuthenticated, setIsAuthenticated, theme } = useContext(UserContext);
   const navigate = useNavigate();
 
-  const registerUser = () => {
-    navigate("/register");
+  const handleCTA = () => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    } else {
+      navigate("/login");
+    }
   };
 
   const LogoutUser = () => {
     localStorage.removeItem("token");
     setIsAuthenticated(false);
-    toast.success("Successfully Logged Out", { autoClose: 1000 });
-    navigate("/login");
+    toast.success("Successfully logged out", { autoClose: 1000 });
+    navigate("/");
   };
 
+  const featureCards = [
+    {
+      icon: <FiPieChart className="text-3xl text-indigo-500" />,
+      title: "Smart Analytics",
+      desc: "Visualize your financial habits with rich interactive charts."
+    },
+    {
+      icon: <FiTrendingUp className="text-3xl text-emerald-500" />,
+      title: "Track Growth",
+      desc: "Monitor your income and expenses effortlessly over time."
+    },
+    {
+      icon: <FiShield className="text-3xl text-blue-500" />,
+      title: "Secure & Private",
+      desc: "Your data is encrypted and securely stored."
+    }
+  ];
+
   return (
-    <div
-      className={`min-h-screen flex flex-col ${
-        theme ? "bg-gray-800" : "bg-purple-100"
-      }`}
-    >
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${theme ? "bg-[#0b0f19] text-white" : "bg-gray-50 text-gray-900"}`}>
       <Navbar />
-      <div className="flex-grow flex items-center justify-center">
-        <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8 py-10 sm:py-16 text-center">
-          <h1
-            className={`text-3xl sm:text-4xl lg:text-5xl font-bold tracking-wide mb-6 ${
-              theme ? "text-purple-200" : "text-purple-800"
-            }`}
-          >
-            <span className="inline-flex flex-wrap justify-center items-center gap-3">
-              <FaWallet
-                className={`text-3xl sm:text-4xl ${
-                  theme ? "text-purple-200" : "text-purple-600"
-                }`}
-              />
-              Welcome to Xpenso
-              <FaChartPie
-                className={`text-3xl sm:text-4xl ${
-                  theme ? "text-purple-200" : "text-purple-600"
-                }`}
-              />
+      
+      <div className="flex-grow flex flex-col items-center justify-center -mt-10 px-4 sm:px-6 relative overflow-hidden">
+        
+        {/* Abstract Background Elements */}
+        {theme ? (
+          <>
+            <div className="absolute top-20 left-10 w-72 h-72 bg-indigo-600/20 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+          </>
+        ) : null}
+
+        <div className="w-full max-w-5xl text-center z-10">
+          
+          <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border shadow-sm text-sm font-medium bg-white/50 border-indigo-100 text-indigo-600 dark:bg-gray-800/50 dark:border-gray-700 dark:text-indigo-300 backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+            Your Personal Finance Copilot
+          </div>
+
+          <h1 className={`text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-8 leading-tight`}>
+            Master your money with <br/>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
+              Complete Clarity.
             </span>
           </h1>
 
-          <p
-            className={`text-base sm:text-lg lg:text-xl leading-relaxed max-w-2xl mx-auto mb-2 ${
-              theme ? "text-gray-300" : "text-gray-700"
-            }`}
-          >
-            Track your income, expenses, and savings – all in one place.
-          </p>
-          <p
-            className={`text-sm sm:text-base lg:text-lg leading-relaxed max-w-xl mx-auto mb-8 ${
-              theme ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            Make smarter financial decisions with real-time insights.
+          <p className={`text-lg sm:text-xl lg:text-2xl max-w-2xl mx-auto mb-10 leading-relaxed font-light ${theme ? "text-gray-400" : "text-gray-600"}`}>
+            Track your income, expenses, and savings seamlessly in one beautiful dashboard designed for modern wealth building.
           </p>
 
-          <div
-            className={`flex  sm:flex-row justify-center items-center gap-6 mt-6 text-3xl ${
-              theme ? "text-purple-200" : "text-purple-600"
-            }`}
-          >
-            {[FaMoneyBillWave, FaChartPie, FaWallet].map((Icon, idx) => (
-              <Icon
-                key={idx}
-                className="hover:scale-110 transition-transform duration-300 cursor-pointer"
-              />
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-20">
+            <button
+              onClick={handleCTA}
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-lg font-semibold rounded-2xl shadow-[0_0_40px_-10px_rgba(79,70,229,0.5)] hover:shadow-[0_0_60px_-15px_rgba(79,70,229,0.7)] transition-all duration-300 hover:-translate-y-1"
+            >
+              {isAuthenticated ? "Go to Dashboard" : "Get Started for Free"}
+              <FaArrowRight className="text-sm" />
+            </button>
+            
+            {isAuthenticated && (
+              <button
+                onClick={LogoutUser}
+                className={`w-full sm:w-auto px-8 py-4 text-lg font-semibold rounded-2xl transition-all duration-300 ${theme ? "bg-gray-800 text-gray-300 hover:bg-gray-700" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"}`}
+              >
+                Log out
+              </button>
+            )}
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {featureCards.map((card, idx) => (
+              <div key={idx} className={`flex flex-col items-center text-center p-6 rounded-3xl border transition-colors duration-300 ${theme ? "bg-[#0f172a]/50 border-gray-800 backdrop-blur-sm hover:bg-[#0f172a]" : "bg-white border-gray-100 shadow-sm hover:shadow-md"}`}>
+                <div className={`p-4 rounded-2xl mb-4 ${theme ? "bg-gray-800/80" : "bg-indigo-50"}`}>
+                  {card.icon}
+                </div>
+                <h3 className={`text-lg font-bold mb-2 ${theme ? "text-gray-100" : "text-gray-900"}`}>{card.title}</h3>
+                <p className={`text-sm ${theme ? "text-gray-400" : "text-gray-500"}`}>{card.desc}</p>
+              </div>
             ))}
           </div>
 
-          <div className="mt-10 flex justify-center">
-            <button
-              onClick={isAuthenticated ? LogoutUser : registerUser}
-              className={`py-2 px-6 text-sm sm:text-base rounded-lg shadow-md transition duration-300 flex items-center font-medium gap-2 focus:outline-none focus:ring-2 focus:ring-offset-2
-              ${
-                theme
-                  ? "bg-purple-700 hover:bg-purple-600 text-white focus:ring-purple-500"
-                  : "bg-purple-800 hover:bg-purple-700 text-white focus:ring-purple-400"
-              }`}
-            >
-              {isAuthenticated ? "Logout" : "Login"}
-            </button>
-          </div>
         </div>
       </div>
     </div>

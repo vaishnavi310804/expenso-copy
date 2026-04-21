@@ -26,7 +26,7 @@ const Form = ({ onClose }) => {
     const newIncome = {
       amount: parseFloat(form.amount),
       label: form.category,
-      date: form.date,
+      date: new Date(form.date).toISOString(),
       icon: form.icon,
     };
 

@@ -1,8 +1,9 @@
-import React, { useContext } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useData } from '../context/DataContext';
-import { UserContext } from '../context/UserContext';
-import { IoSunnyOutline, IoMoonOutline } from "react-icons/io5";
+import React, { useContext } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useData } from "../context/DataContext";
+import { UserContext } from "../context/UserContext";
+import { IoSunnyOutline, IoMoonOutline, IoLogOutOutline } from "react-icons/io5";
+import { FiPieChart, FiTrendingUp, FiTrendingDown, FiMessageSquare } from "react-icons/fi";
 
 const Sidebar = () => {
   const { userData, currentUserEmail, setCurrentUserEmail } = useData();
@@ -13,9 +14,9 @@ const Sidebar = () => {
 
   if (!userData[currentUserEmail]) {
     return (
-      <p className="text-2xl p-6 text-center text-black">
-        User data not found.
-      </p>
+      <div className="p-6 text-center text-gray-500">
+        Loading...
+      </div>
     );
   }
 
@@ -23,88 +24,133 @@ const Sidebar = () => {
 
   const handleNavigation = (path) => () => navigate(path);
 
-  const isActive = (path) =>
-    `w-full text-left px-4 py-3 rounded-xl transition-all duration-300 font-semibold ${
-      currentPath === path
-        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/30 tracking-wide'
+  const isActive = (path) => currentPath === path;
+
+  const getMenuClasses = (path) => {
+    const active = isActive(path);
+    return `group flex items-center gap-3 w-full px-5 py-3.5 rounded-2xl transition-all duration-300 font-medium ${
+      active
+        ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-md shadow-indigo-500/25"
         : theme
-          ? 'text-gray-300 hover:bg-gray-800 hover:text-purple-400'
-          : 'text-gray-700 hover:bg-purple-50 hover:text-purple-700 hover:shadow-sm'
+        ? "text-gray-400 hover:text-white hover:bg-gray-800"
+        : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-50"
     }`;
+  };
+
+  const getIconClasses = (path) => {
+    const active = isActive(path);
+    return `text-xl transition-colors duration-300 ${
+      active
+        ? "text-white"
+        : theme
+        ? "text-gray-500 group-hover:text-white"
+        : "text-gray-400 group-hover:text-indigo-600"
+    }`;
+  };
 
   const logoutHandler = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setCurrentUserEmail(null);
     setIsAuthenticated(false);
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
     <div
-      className={`p-4 flex flex-col md:flex-col lg:w-64 w-full md:h-full shadow-[4px_0_24px_rgba(0,0,0,0.02)] transition-colors duration-300 ${
-        theme ? 'bg-gray-900 border-r border-gray-800 text-white' : 'bg-white/95 backdrop-blur-xl border-r border-purple-50 text-gray-900'
+      className={`relative p-6 flex flex-col w-full h-full border-r transition-colors duration-300 ${
+        theme
+          ? "bg-[#0b0f19] border-gray-800 text-white"
+          : "bg-gray-50/50 border-gray-200 text-gray-900"
       }`}
     >
+      {/* Brand Logo */}
       <div
-        onClick={() => navigate('/')}
-        className={`text-4xl font-extrabold cursor-pointer p-4 mb-6 md:mb-10 text-center tracking-tight bg-clip-text text-transparent ${
-          theme 
-            ? 'bg-gradient-to-r from-purple-400 to-indigo-300 hover:from-purple-300 hover:to-indigo-200' 
-            : 'bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-800 hover:to-indigo-700'
-        }`}
+        onClick={() => navigate("/")}
+        className="flex justify-center items-center cursor-pointer mb-10"
       >
-        Xpenso
+        <span className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
+          Xpenso.
+        </span>
       </div>
 
-      <div className="flex flex-col items-center mb-4 md:mb-6">
+      {/* User Info Profile Plate */}
+      <div
+        className={`flex items-center gap-4 p-4 rounded-2xl mb-8 transition-colors ${
+          theme ? "bg-gray-800/50" : "bg-white shadow-sm border border-gray-100"
+        }`}
+      >
         <img
           src={profilePic}
           alt="Profile"
-          className="w-16 h-16 rounded-full object-cover border-4 border-purple-500 shadow-lg hover:scale-105 transition-transform"
+          className="w-12 h-12 rounded-full object-cover border-2 border-indigo-100 shadow-sm"
         />
-        <h2 className={`mt-2 text-lg font-semibold ${theme ? 'text-white' : 'text-purple-800'}`}>
-          Welcome, {name}
-        </h2>
-        <p className={`text-sm ${theme ? 'text-purple-300' : 'text-purple-500'}`}>{email}</p>
+        <div className="flex flex-col truncate">
+          <h2
+            className={`text-sm font-semibold truncate ${
+              theme ? "text-gray-100" : "text-gray-900"
+            }`}
+          >
+            {name}
+          </h2>
+          <p
+            className={`text-xs truncate ${
+              theme ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            {email}
+          </p>
+        </div>
       </div>
 
-      <div className="flex flex-col md:flex-col gap-2 mb-4 md:mb-6">
-        <button onClick={handleNavigation('/dashboard')} className={isActive('/dashboard')}>
-          Dashboard
+      {/* Navigation Links */}
+      <div className="flex flex-col gap-2 mb-8 flex-grow">
+        <button onClick={handleNavigation("/dashboard")} className={getMenuClasses("/dashboard")}>
+          <FiPieChart className={getIconClasses("/dashboard")} />
+          <span>Dashboard</span>
         </button>
-        <button onClick={handleNavigation('/income')} className={isActive('/income')}>
-          Income
+        <button onClick={handleNavigation("/income")} className={getMenuClasses("/income")}>
+          <FiTrendingUp className={getIconClasses("/income")} />
+          <span>Income</span>
         </button>
-        <button onClick={handleNavigation('/expense')} className={isActive('/expense')}>
-          Expense
+        <button onClick={handleNavigation("/expense")} className={getMenuClasses("/expense")}>
+          <FiTrendingDown className={getIconClasses("/expense")} />
+          <span>Expenses</span>
         </button>
-        <button onClick={handleNavigation('/loan')} className={isActive('/loan')}>
-          Loan Suggestion
-        </button>
-        <button
-          onClick={logoutHandler}
-          className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-300 font-semibold mt-4 ${
-            theme
-              ? 'bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white hover:shadow-lg hover:shadow-red-500/20'
-              : 'bg-red-50 text-red-600 hover:bg-red-500 hover:text-white hover:shadow-lg hover:shadow-red-500/20'
-          }`}
-        >
-          Logout
+        <button onClick={handleNavigation("/loan")} className={getMenuClasses("/loan")}>
+          <FiMessageSquare className={getIconClasses("/loan")} />
+          <span>Loans</span>
         </button>
       </div>
 
-      <div className="mt-auto">
+      {/* Bottom Actions */}
+      <div className="flex flex-col gap-3 mt-auto pb-4">
         <button
           onClick={() => setTheme(!theme)}
           aria-label="Toggle theme"
-          className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg transition duration-300 ${
+          className={`flex items-center gap-3 w-full px-5 py-3 rounded-2xl transition duration-300 font-medium ${
             theme
-              ? 'bg-purple-500 text-white hover:bg-purple-600'
-              : 'bg-purple-600 text-white hover:bg-purple-700'
+              ? "text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20"
+              : "text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
           }`}
         >
-          {theme ? <IoSunnyOutline size={20} /> : <IoMoonOutline size={20} />}
-          {theme ? 'Light Mode' : 'Dark Mode'}
+          {theme ? (
+            <IoSunnyOutline className="text-xl" />
+          ) : (
+            <IoMoonOutline className="text-xl" />
+          )}
+          <span>{theme ? "Light Mode" : "Dark Mode"}</span>
+        </button>
+
+        <button
+          onClick={logoutHandler}
+          className={`flex items-center gap-3 w-full px-5 py-3 rounded-2xl transition duration-300 font-medium ${
+            theme
+              ? "text-rose-400 hover:bg-rose-500/10"
+              : "text-rose-600 hover:bg-rose-50"
+          }`}
+        >
+          <IoLogOutOutline className="text-xl" />
+          <span>Log out</span>
         </button>
       </div>
     </div>

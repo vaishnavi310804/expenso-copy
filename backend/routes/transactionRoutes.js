@@ -20,7 +20,7 @@ router.route('/analytics')
   .get(getAnalytics);
 
 router.route('/:id')
-  .put(updateTransaction)
+  .patch(updateTransaction)
   .delete(deleteTransaction);
 
 export default router;

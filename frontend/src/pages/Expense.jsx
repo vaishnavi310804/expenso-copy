@@ -1,9 +1,7 @@
 import React, { useContext } from "react";
-import { Doughnut, Bar, Line } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
-  ArcElement,
-  BarElement,
   Tooltip,
   Legend,
   LinearScale,
@@ -18,12 +16,11 @@ import ExpenseSources from "../components/ExpenseSources";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
 import NavbarPages from "../components/NavbarPages";
+import { FiPlus } from "react-icons/fi";
 
 ChartJS.register(
-  ArcElement,
   Tooltip,
   Legend,
-  BarElement,
   LinearScale,
   CategoryScale,
   LineElement,
@@ -32,48 +29,56 @@ ChartJS.register(
 );
 
 const Expense = () => {
-  const { userData, currentUserEmail, setCurrentUserEmail } = useData();
-  const { theme, setTheme, menu, setMenu } = useContext(UserContext);
+  const { userData, currentUserEmail } = useData();
+  const { theme } = useContext(UserContext);
   const navigate = useNavigate();
 
   if (!userData[currentUserEmail]) {
     return (
-      <p className="text-2xl p-6 text-center text-black">
-        User data not found.
-      </p>
+      <div className={`min-h-screen flex items-center justify-center ${theme ? "bg-[#0b0f19] text-white" : "bg-gray-50 text-gray-900"}`}>
+        <p className="font-medium animate-pulse text-gray-500">Loading Expense Data...</p>
+      </div>
     );
   }
 
-  const { name, balance, expenses, transactions, profilePic } =
-    userData[currentUserEmail];
+  const { transactions } = userData[currentUserEmail];
   const expenseData = transactions.filter((t) => t.amount < 0);
 
   const grouped = expenseData.reduce((sum, curr) => {
-    if (!sum[curr.date]) {
-      sum[curr.date] = { amount: 0, labels: new Set() };
+    // using ISO string up to date part for grouping
+    const dateStr = new Date(curr.date).toISOString().split('T')[0];
+    if (!sum[dateStr]) {
+      sum[dateStr] = { amount: 0, labels: new Set() };
     }
-    sum[curr.date].amount += Math.abs(curr.amount);
-    sum[curr.date].labels.add(curr.label);
+    sum[dateStr].amount += Math.abs(curr.amount);
+    sum[dateStr].labels.add(curr.label);
     return sum;
   }, {});
 
-  const labels = Object.keys(grouped);
-  const values = labels.map((date) => grouped[date].amount);
-  const labelsMap = labels.map((date) =>
+  // Sort dates
+  const sortedDates = Object.keys(grouped).sort((a,b) => new Date(a) - new Date(b));
+  
+  const labels = sortedDates;
+  const values = sortedDates.map((date) => grouped[date].amount);
+  const labelsMap = sortedDates.map((date) =>
     Array.from(grouped[date].labels).join(", ")
   );
 
   const ExpenseOverviewData = {
-    labels: labels,
+    labels: labels.map(d => new Date(d).toLocaleDateString(undefined, {month:'short', day:'numeric'})),
     datasets: [
       {
         label: "Expense Overview",
         data: values,
         backgroundColor: theme
-          ? "rgba(147, 51, 234, 0.2)"
-          : "rgba(168, 85, 247, 0.1)",
-        borderColor: "#9333EA",
-        pointBackgroundColor: "#9333EA",
+          ? "rgba(244, 63, 94, 0.15)" // rose-500 opacity
+          : "rgba(244, 63, 94, 0.1)",
+        borderColor: "#f43f5e", // rose-500
+        pointBackgroundColor: "#f43f5e",
+        pointBorderColor: theme ? "#0f172a" : "#fff",
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
         tension: 0.4,
         fill: true,
       },
@@ -86,89 +91,97 @@ const Expense = () => {
     plugins: {
       legend: {
         display: false,
-        labels: {
-          color: theme ? "white" : "black",
-        },
       },
       tooltip: {
+        backgroundColor: theme ? "#1e293b" : "#fff",
+        titleColor: theme ? "#cbd5e1" : "#64748b",
+        bodyColor: theme ? "#fff" : "#0f172a",
+        bodyFont: { weight: 'bold', size: 14 },
+        borderColor: theme ? "#334155" : "#e2e8f0",
+        borderWidth: 1,
+        padding: 12,
         callbacks: {
+          title: function(context) {
+            const index = context[0].dataIndex;
+            return labelsMap[index];
+          },
           label: function (context) {
-            const index = context.dataIndex;
-            const multiLabel = labelsMap[index];
             const amount = context.formattedValue;
-            return [`Total: ₹${amount}`, `Details: ${multiLabel}`];
+            return `Total: ₹${amount}`;
           },
         },
       },
     },
     scales: {
       x: {
-        ticks: {
-          color: theme ? "#e0d7ff" : "#333333",
-        },
-        grid: {
-          color: theme ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
-        },
+        ticks: { color: theme ? "#64748b" : "#94a3b8", font: {family: 'Inter'} },
+        grid: { display: false },
+        border: { display: false }
       },
       y: {
         beginAtZero: true,
         ticks: {
           stepSize: 1000,
-          color: theme ? "#e0d7ff" : "#333333",
+          color: theme ? "#64748b" : "#94a3b8",
+          font: {family: 'Inter'},
+          callback: (value) => `₹${value}`
         },
         grid: {
-          color: theme ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+          color: theme ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.04)",
+          borderDash: [5, 5]
         },
+        border: { display: false }
       },
     },
   };
-
 
   const addExpenseHandler = () => {
     navigate("/expenseform");
   };
 
   return (
-    <div
-      className={`flex flex-col h-screen ${
-        theme ? "bg-gray-800 text-white" : "bg-white text-black"
-      }`}
-    >
-      <NavbarPages/>
+    <div className={`flex flex-col min-h-screen transition-colors duration-300 ${theme ? "bg-[#0b0f19] text-white" : "bg-gray-50 text-gray-900"}`}>
+      <NavbarPages />
 
-      <div className="flex">
-        <div className="hidden md:block fixed top-0 left-0 h-screen w-56 lg:w-64 shadow-md bg-white z-40">
-          <Sidebar />
-        </div>
-        <div
-          className={`flex-1 p-2 md:ml-56 lg:ml-64 ${
-            theme ? "bg-gray-800" : "bg-gray-100"
-          } overflow-y-auto`}
-        >
-          <div className="p-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2
-                className={`text-3xl font-semibold ${
-                  theme ? "text-white" : "text-black"
-                }`}
-              >
-                Expense Overview
-              </h2>
-              <button
-                onClick={addExpenseHandler}
-                className="text-white bg-purple-500 hover:bg-purple-700 font-medium py-2 px-4 rounded-lg transition"
-              >
-                Add Expense
-              </button>
-            </div>
-            <div className="w-full max-w-4xl h-[300px] sm:h-[400px] md:h-[500px] mx-auto">
-              <Line
-                data={ExpenseOverviewData}
-                options={ExpenseOverviewOptions}
-              />
-            </div>
+      <div className="flex flex-1">
+        <div className="hidden md:block w-64 flex-shrink-0 z-40">
+          <div className="fixed top-0 left-0 w-64 h-screen">
+            <Sidebar />
           </div>
-          <ExpenseSources />
+        </div>
+
+        <div className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+          
+          <div className="flex justify-between items-center pb-2">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight mb-1">Expenses</h1>
+              <p className={`text-sm ${theme ? "text-gray-400" : "text-gray-500"}`}>Analyze where your money is going.</p>
+            </div>
+            <button
+              onClick={addExpenseHandler}
+              className="flex items-center gap-2 text-white bg-rose-500 hover:bg-rose-600 font-medium py-2.5 px-5 rounded-xl shadow-sm shadow-rose-500/30 transition-all hover:-translate-y-0.5"
+            >
+              <FiPlus className="text-lg"/> <span className="hidden sm:inline">Add Expense</span>
+            </button>
+          </div>
+
+          {/* Chart Container */}
+          <div className={`p-6 sm:p-8 rounded-3xl border ${theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"}`}>
+             <h3 className="text-lg font-bold mb-6 tracking-tight">Spending Timeline</h3>
+             <div className="w-full h-[300px] sm:h-[400px]">
+                {values.length === 0 ? (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">Not enough data to map trends.</div>
+                ) : (
+                  <Line data={ExpenseOverviewData} options={ExpenseOverviewOptions} />
+                )}
+             </div>
+          </div>
+          
+          {/* List Component wrapper avoids extra padding if already padded inside */}
+          <div className={`rounded-3xl border overflow-hidden ${theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"}`}>
+            <ExpenseSources />
+          </div>
+
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ import api from "../api/axiosConfig";
 import TrendsChart from "../components/analytics/TrendsChart";
 import CategoryChart from "../components/analytics/CategoryChart";
 import InsightsList from "../components/analytics/InsightsList";
+import { FiArrowUpRight, FiArrowDownRight, FiPlus } from "react-icons/fi";
 
 const Dashboard = () => {
   const { userData, currentUserEmail } = useData();
@@ -16,21 +17,31 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const [analytics, setAnalytics] = useState(null);
+  const [apiError, setApiError] = useState(false);
   const [trendView, setTrendView] = useState('monthly');
 
   useEffect(() => {
     if (userData[currentUserEmail]) {
       api.get('/transactions/analytics')
-         .then(res => setAnalytics(res.data))
-         .catch(err => console.error("Failed to fetch analytics:", err));
+         .then(res => {
+           setAnalytics(res.data);
+           setApiError(false);
+         })
+         .catch(err => {
+           console.error("Failed to fetch analytics:", err);
+           setApiError(true);
+         });
     }
   }, [userData, currentUserEmail]);
 
   if (!userData[currentUserEmail]) {
     return (
-      <p className="text-2xl p-6 text-center text-black dark:text-white">
-        User data not found.
-      </p>
+      <div className={`min-h-screen flex items-center justify-center ${theme ? "bg-[#0b0f19] text-white" : "bg-gray-50 text-gray-900"}`}>
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <div className="h-12 w-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 font-medium">Loading Dashboard...</p>
+        </div>
+      </div>
     );
   }
 
@@ -38,20 +49,27 @@ const Dashboard = () => {
 
   if (transactions.length === 0) {
     return (
-      <div className={`flex flex-col min-h-screen ${theme ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
+      <div className={`flex flex-col min-h-screen transition-colors duration-300 ${theme ? "bg-[#0b0f19] text-white" : "bg-gray-50 text-gray-900"}`}>
         <NavbarPages />
         <div className="flex flex-1">
-          <div className="hidden md:block fixed top-0 left-0 h-screen w-56 lg:w-64 shadow-md bg-white dark:bg-gray-900 z-40">
-            <Sidebar />
+          <div className="hidden md:block w-64 flex-shrink-0 z-40">
+            <div className="fixed top-0 left-0 w-64 h-screen">
+              <Sidebar />
+            </div>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center p-8 md:ml-56 lg:ml-64 transition-colors duration-300">
-            <h2 className={`text-3xl sm:text-4xl font-bold mb-4 ${theme ? "text-purple-300" : "text-purple-600"}`}>Welcome to Xpenso, {name}!</h2>
-            <p className={`text-lg sm:text-xl mb-8 text-center max-w-lg ${theme ? "text-gray-300" : "text-gray-500"}`}>
-              Your dashboard is currently empty. Start by adding your first income or expense to see your financial overview.
-            </p>
-            <div className="flex gap-6">
-               <button onClick={() => navigate('/incomeform')} className="px-6 py-3 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-lg font-semibold rounded-xl shadow-lg shadow-green-500/30 hover:scale-105 hover:shadow-green-500/50 transition-all duration-300">Add Income</button>
-               <button onClick={() => navigate('/expenseform')} className="px-6 py-3 bg-gradient-to-r from-rose-400 to-red-500 text-white text-lg font-semibold rounded-xl shadow-lg shadow-red-500/30 hover:scale-105 hover:shadow-red-500/50 transition-all duration-300">Add Expense</button>
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+            <div className={`p-12 rounded-3xl max-w-2xl w-full border ${theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100 shadow-xl shadow-gray-200/50"}`}>
+              <div className="w-24 h-24 mx-auto mb-8 bg-indigo-100 dark:bg-indigo-500/20 rounded-full flex items-center justify-center">
+                <FiPlus className="text-5xl text-indigo-500" />
+              </div>
+              <h2 className="text-3xl font-extrabold mb-4">Welcome, {name}!</h2>
+              <p className={`text-lg mb-10 leading-relaxed ${theme ? "text-gray-400" : "text-gray-500"}`}>
+                Your dashboard is a clean slate. Let's start tracking your wealth by adding your first transaction.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                 <button onClick={() => navigate('/incomeform')} className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-2xl shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-1">Add Income</button>
+                 <button onClick={() => navigate('/expenseform')} className="px-8 py-4 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-2xl shadow-lg shadow-rose-500/25 transition-all hover:-translate-y-1">Add Expense</button>
+              </div>
             </div>
           </div>
         </div>
@@ -59,71 +77,101 @@ const Dashboard = () => {
     );
   }
 
-  // Use the analytics API for the source of truth if available, otherwise fallback to local computation
-  const income = analytics ? analytics.currentMonth.income : transactions.filter((t) => t.amount > 0).reduce((acc, t) => acc + t.amount, 0);
-  const expenses = analytics ? analytics.currentMonth.expense : transactions.filter((t) => t.amount < 0).reduce((acc, t) => acc + Math.abs(t.amount), 0);
+  const currentMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const currentMonthTransactions = transactions.filter(t => new Date(t.date) >= currentMonthStart);
+  
+  const income = analytics ? analytics.currentMonth.income : currentMonthTransactions.filter((t) => t.amount > 0).reduce((acc, t) => acc + t.amount, 0);
+  const expenses = analytics ? analytics.currentMonth.expense : currentMonthTransactions.filter((t) => t.amount < 0).reduce((acc, t) => acc + Math.abs(t.amount), 0);
   const balance = Math.max(income - expenses, 0);
 
   const recentExpenses = transactions.filter((t) => t.amount < 0).slice(0, 5);
   const recentIncome = transactions.filter((t) => t.amount > 0).slice(0, 5);
 
+  const MetricCard = ({ title, amount, type }) => (
+    <div className={`p-6 sm:p-8 rounded-3xl transition-all duration-300 border ${
+      theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100 shadow-lg shadow-gray-200/40"
+    }`}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className={`font-medium tracking-wide text-sm ${theme ? "text-gray-400" : "text-gray-500"}`}>{title}</h3>
+        {type === 'savings' && <div className="p-2 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl"><FiPlus className="text-indigo-500"/></div>}
+        {type === 'income' && <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl"><FiArrowUpRight className="text-emerald-500"/></div>}
+        {type === 'expense' && <div className="p-2 bg-rose-50 dark:bg-rose-500/10 rounded-xl"><FiArrowDownRight className="text-rose-500"/></div>}
+      </div>
+      <p className={`font-bold text-3xl sm:text-4xl tracking-tight mb-2 ${
+        theme ? "text-white" : "text-gray-900"
+      }`}>
+        ₹{amount.toLocaleString()}
+      </p>
+      <p className={`text-xs font-semibold ${
+        type === 'savings' ? 'text-indigo-500' : type === 'income' ? 'text-emerald-500' : 'text-rose-500'
+      }`}>THIS MONTH</p>
+    </div>
+  );
+
   return (
-    <div className={`flex flex-col min-h-screen ${theme ? "bg-gray-900 text-white" : "bg-gray-50 text-black"}`}>
+    <div className={`flex flex-col min-h-screen transition-colors duration-300 ${theme ? "bg-[#0b0f19] text-white" : "bg-gray-50 text-gray-900"}`}>
       <NavbarPages />
 
       <div className="flex flex-1">
-        <div className="hidden md:block fixed top-0 left-0 h-screen w-56 lg:w-64 z-40">
-          <Sidebar />
+        <div className="hidden md:block w-64 flex-shrink-0 z-40">
+          <div className="fixed top-0 left-0 w-64 h-screen">
+            <Sidebar />
+          </div>
         </div>
 
-        <div className={`flex-1 overflow-y-auto md:ml-56 lg:ml-64 transition-colors duration-300 p-4 lg:p-8 space-y-6`}>
+        <div className="flex-1 w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
           
-          {/* Row 1: Key Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              ["Net Savings", balance],
-              ["Total Income", income],
-              ["Total Expenses", expenses],
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                className={`p-6 sm:p-8 rounded-2xl shadow-xl transition-all duration-300 hover:-translate-y-1 ${
-                  theme ? "bg-gray-800 border-gray-700 text-white" : "bg-white border-gray-100 text-gray-800"
-                } border`}
-              >
-                <h3 className="mb-2 font-medium text-gray-400 uppercase tracking-wider text-sm">{label}</h3>
-                <p className={`font-extrabold text-3xl sm:text-4xl tracking-tight bg-clip-text text-transparent ${
-                   label === 'Net Savings' ? 'bg-gradient-to-r from-purple-500 to-indigo-500' :
-                   label === 'Total Income' ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
-                   'bg-gradient-to-r from-rose-400 to-red-500'
-                }`}>
-                  ₹{value.toLocaleString()}
-                </p>
-                <p className="text-xs text-gray-500 mt-2 tracking-wide font-medium">THIS MONTH</p>
-              </div>
-            ))}
+          {/* Header Row */}
+          <div className="flex justify-between items-center pb-2">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight mb-1">Financial Overview</h1>
+              <p className={`text-sm ${theme ? "text-gray-400" : "text-gray-500"}`}>Track your earnings, spending, and insights seamlessly.</p>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => navigate('/incomeform')} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 transition-colors shadow-sm shadow-emerald-500/30">
+                <FiPlus /> Income
+              </button>
+              <button onClick={() => navigate('/expenseform')} className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-rose-500 text-white font-medium rounded-xl hover:bg-rose-600 transition-colors shadow-sm shadow-rose-500/30">
+                <FiPlus /> Expense
+              </button>
+            </div>
           </div>
 
-          {!analytics ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          {/* Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <MetricCard title="Net Savings" amount={balance} type="savings" />
+            <MetricCard title="Total Income" amount={income} type="income" />
+            <MetricCard title="Total Expenses" amount={expenses} type="expense" />
+          </div>
+
+          {!analytics && !apiError ? (
+            <div className={`flex justify-center items-center h-64 rounded-3xl border ${theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100"}`}>
+              <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent"></div>
+            </div>
+          ) : apiError ? (
+            <div className={`flex flex-col justify-center items-center text-center h-64 p-8 rounded-3xl border ${theme ? "bg-[#0f172a] border-gray-800" : "bg-red-50 border-red-100"}`}>
+               <span className="text-4xl mb-3">⚠️</span>
+               <h3 className={`text-lg font-bold mb-2 ${theme ? "text-gray-200" : "text-gray-900"}`}>Failed to load analytics</h3>
+               <p className={`text-sm ${theme ? "text-gray-400" : "text-gray-500"}`}>Your data is safe, but we encountered an error crunching the numbers. Please try refreshing.</p>
             </div>
           ) : (
             <>
-              {/* Row 2: Insights & Category Heatmap */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-7 h-full">
+              {/* Analytics Layout */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <div className="xl:col-span-2 h-full">
                   <InsightsList insights={analytics.insights} predictedExpense={analytics.predictedExpense} theme={theme} />
                 </div>
                 
-                <div className={`lg:col-span-5 p-6 rounded-2xl shadow-xl border ${theme ? 'bg-gray-800 border-gray-700' : 'bg-white border-purple-50'}`}>
-                  <h3 className="text-xl font-semibold mb-6">Expense Categories</h3>
+                <div className={`p-6 sm:p-8 rounded-3xl border ${theme ? 'bg-[#0f172a] border-gray-800' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/40'}`}>
+                  <h3 className="text-lg font-bold mb-6 tracking-tight">Expense Heatmap</h3>
                   <CategoryChart data={analytics.categoryDistribution} theme={theme} />
                 </div>
               </div>
 
-              {/* Row 3: Trends */}
-              <div className={`p-6 rounded-2xl shadow-xl border ${theme ? 'bg-gray-800 border-gray-700' : 'bg-white border-purple-50'}`}>
+              <div className={`p-6 sm:p-8 rounded-3xl border ${theme ? 'bg-[#0f172a] border-gray-800' : 'bg-white border-gray-100 shadow-xl shadow-gray-200/40'}`}>
+                <div className="mb-4">
+                  <h3 className="text-lg font-bold tracking-tight">Spend Trends</h3>
+                </div>
                 <TrendsChart 
                   data={trendView === 'monthly' ? analytics.monthlyTrends : analytics.weeklyTrends} 
                   theme={theme} 
@@ -134,42 +182,50 @@ const Dashboard = () => {
             </>
           )}
 
-          {/* Row 4: Recent Transactions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
-            <div className={`rounded-2xl shadow-xl border p-6 ${theme ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"}`}>
-              <h3 className="text-lg font-bold mb-4">Recent Expenses</h3>
-              <ul className="space-y-4">
-                {recentExpenses.length === 0 ? <p className="text-gray-500">No recent expenses.</p> : recentExpenses.map((item, i) => (
-                  <li key={i} className={`flex justify-between items-center p-3 rounded-xl transition ${theme ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
+          {/* Recent Trans Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
+            {/* Expenses List */}
+            <div className={`rounded-3xl border p-6 sm:p-8 ${theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"}`}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold tracking-tight">Recent Expenses</h3>
+                <button onClick={()=>navigate('/expense')} className="text-sm font-semibold tracking-wide text-indigo-500 hover:text-indigo-600">View All</button>
+              </div>
+              <ul className="space-y-3">
+                {recentExpenses.length === 0 ? <p className="text-sm py-4 text-center text-gray-400">No expenses yet.</p> : recentExpenses.map((item, i) => (
+                  <li key={i} className={`flex justify-between items-center p-3 sm:p-4 rounded-2xl transition duration-200 border ${theme ? 'bg-gray-800/20 border-transparent hover:border-gray-700' : 'bg-gray-50/50 border-transparent hover:bg-white hover:border-gray-100 hover:shadow-sm'}`}>
                     <div className="flex gap-4 items-center">
-                      <div className={`text-3xl p-2 rounded-lg ${theme ? 'bg-gray-700' : 'bg-gray-100'}`}>{item.icon}</div>
+                      <div className={`text-2xl w-12 h-12 flex items-center justify-center rounded-xl ${theme ? 'bg-gray-800' : 'bg-white shadow-sm border border-gray-100'}`}>{item.icon}</div>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-base">{item.label}</span>
-                        <span className="text-xs text-gray-500">{item.date}</span>
+                        <span className="font-semibold text-[15px]">{item.label}</span>
+                        <span className={`text-xs ${theme ? 'text-gray-400':'text-gray-500'}`}>{new Date(item.date).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <span className={`font-bold px-4 py-1.5 rounded-lg border ${theme ? 'text-red-400 bg-red-900/20 border-red-800' : 'text-red-600 bg-red-50 border-red-100'}`}>
-                      - ₹{Math.abs(item.amount)}
+                    <span className="font-bold text-rose-500">
+                      - ₹{Math.abs(item.amount).toLocaleString()}
                     </span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className={`rounded-2xl shadow-xl border p-6 ${theme ? "bg-gray-800 border-gray-700" : "bg-white border-gray-100"}`}>
-              <h3 className="text-lg font-bold mb-4">Recent Incomes</h3>
-              <ul className="space-y-4">
-                {recentIncome.length === 0 ? <p className="text-gray-500">No recent incomes.</p> : recentIncome.map((item, i) => (
-                  <li key={i} className={`flex justify-between items-center p-3 rounded-xl transition ${theme ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}`}>
+            {/* Income List */}
+            <div className={`rounded-3xl border p-6 sm:p-8 ${theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"}`}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold tracking-tight">Recent Income</h3>
+                <button onClick={()=>navigate('/income')} className="text-sm font-semibold tracking-wide text-indigo-500 hover:text-indigo-600">View All</button>
+              </div>
+              <ul className="space-y-3">
+                {recentIncome.length === 0 ? <p className="text-sm py-4 text-center text-gray-400">No income yet.</p> : recentIncome.map((item, i) => (
+                  <li key={i} className={`flex justify-between items-center p-3 sm:p-4 rounded-2xl transition duration-200 border ${theme ? 'bg-gray-800/20 border-transparent hover:border-gray-700' : 'bg-gray-50/50 border-transparent hover:bg-white hover:border-gray-100 hover:shadow-sm'}`}>
                     <div className="flex gap-4 items-center">
-                      <div className={`text-3xl p-2 rounded-lg ${theme ? 'bg-gray-700' : 'bg-gray-100'}`}>{item.icon}</div>
+                      <div className={`text-2xl w-12 h-12 flex items-center justify-center rounded-xl ${theme ? 'bg-gray-800' : 'bg-white shadow-sm border border-gray-100'}`}>{item.icon}</div>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-base">{item.label}</span>
-                        <span className="text-xs text-gray-500">{item.date}</span>
+                        <span className="font-semibold text-[15px]">{item.label}</span>
+                        <span className={`text-xs ${theme ? 'text-gray-400':'text-gray-500'}`}>{new Date(item.date).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <span className={`font-bold px-4 py-1.5 rounded-lg border ${theme ? 'text-green-400 bg-green-900/20 border-green-800' : 'text-green-600 bg-green-50 border-green-100'}`}>
-                      + ₹{Math.abs(item.amount)}
+                    <span className="font-bold text-emerald-500">
+                      + ₹{Math.abs(item.amount).toLocaleString()}
                     </span>
                   </li>
                 ))}

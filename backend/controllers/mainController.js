@@ -116,14 +116,7 @@ export const getAnalytics = async (req, res) => {
       { $match: { user: userId } },
       { 
         $addFields: { 
-          parsedDate: { 
-            $dateFromString: { 
-              dateString: "$date", 
-              format: "%Y-%m-%d", 
-              onError: new Date(), 
-              onNull: new Date() 
-            } 
-          }
+          parsedDate: { $toDate: "$date" }
         } 
       },
       {
@@ -244,7 +237,7 @@ export const createTransaction = async (req, res) => {
       user: req.user.id,
       label,
       amount,
-      date,
+      date: new Date(date),
       icon,
     });
 
@@ -268,9 +261,14 @@ export const updateTransaction = async (req, res) => {
       return res.status(401).json({ message: 'User not authorized' });
     }
 
+    const updateData = { ...req.body };
+    if (updateData.date) {
+      updateData.date = new Date(updateData.date);
+    }
+
     const updatedTransaction = await Transaction.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      updateData,
       { new: true }
     );
 
