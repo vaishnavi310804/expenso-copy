@@ -31,9 +31,9 @@ export const DataProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
-  // Backwards compatibility layer for components 
+  
   const currentUserEmail = user?.email || "guest@app.com";
-  const setCurrentUserEmail = () => {}; // Dummy for Login.jsx compatibility
+  const setCurrentUserEmail = () => {}; 
 
   const income = transactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
   const expenses = transactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + Math.abs(t.amount), 0);
@@ -53,10 +53,10 @@ export const DataProvider = ({ children }) => {
 
   const contextValue = {
     userData,
-    setUserData: () => {}, // Dummy setter
+    setUserData: () => {}, 
     currentUserEmail,
     setCurrentUserEmail,
-    updateTransactions: fetchTransactions, // Components should now call fetchTransactions () instead, but we alias it for compat, though we'll update them to not pass arrays.
+    updateTransactions: fetchTransactions, 
     refreshTransactions: fetchTransactions,
     editableExpenseData,
     setEditableExpenseData,

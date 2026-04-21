@@ -1,5 +1,4 @@
 import React from 'react'
-import Navbar from './components/Navbar'
 import {BrowserRouter as Router,Routes,Route } from 'react-router-dom'
 import Home from './pages/Home'
 import Login from './components/Login'
@@ -11,6 +10,7 @@ import Form from './components/Form'
 import AddExpenseForm from './components/AddExpenseForm'
 import Loan from './pages/Loan'
 import AddIncomeForm from './components/AddIncomeForm'
+import ProtectedRoute from './components/ProtectedRoute'
 
 const App = () => {
   return (
@@ -20,13 +20,14 @@ const App = () => {
           <Route path='/' element={<Home />} />
           <Route path='/login' element={<Login />} />
           <Route path='/register' element={<Register />} />
-          <Route path='/dashboard' element={<Dashboard />} />
-          <Route path='/income' element={<Income />} />
-          <Route path='/expense' element={<Expense />} />
-          <Route path='/form' element={<Form />} />
-          <Route path='/expenseform' element={<AddExpenseForm />} />
-          <Route path='/incomeform' element={<AddIncomeForm />} />
-          <Route path='/loan' element={<Loan />} />
+          
+          <Route path='/dashboard' element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path='/income' element={<ProtectedRoute><Income /></ProtectedRoute>} />
+          <Route path='/expense' element={<ProtectedRoute><Expense /></ProtectedRoute>} />
+          <Route path='/form' element={<ProtectedRoute><Form /></ProtectedRoute>} />
+          <Route path='/expenseform' element={<ProtectedRoute><AddExpenseForm /></ProtectedRoute>} />
+          <Route path='/incomeform' element={<ProtectedRoute><AddIncomeForm /></ProtectedRoute>} />
+          <Route path='/loan' element={<ProtectedRoute><Loan /></ProtectedRoute>} />
         </Routes>
       </Router>
     </div>

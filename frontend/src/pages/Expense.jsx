@@ -177,7 +177,6 @@ const Expense = () => {
              </div>
           </div>
           
-          {/* List Component wrapper avoids extra padding if already padded inside */}
           <div className={`rounded-3xl border overflow-hidden ${theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"}`}>
             <ExpenseSources />
           </div>

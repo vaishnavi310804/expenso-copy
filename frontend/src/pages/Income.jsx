@@ -146,7 +146,6 @@ const Income = () => {
             </button>
           </div>
 
-          {/* Chart Container */}
           <div className={`p-6 sm:p-8 rounded-3xl border ${theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"}`}>
              <h3 className="text-lg font-bold mb-6 tracking-tight">Earning Timeline</h3>
              <div className="w-full h-[300px] sm:h-[400px]">
@@ -158,7 +157,6 @@ const Income = () => {
              </div>
           </div>
           
-          {/* List Component wrapper */}
           <div className={`rounded-3xl border overflow-hidden ${theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"}`}>
             <IncomeSources />
           </div>
