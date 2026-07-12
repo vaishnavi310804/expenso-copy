@@ -205,7 +205,6 @@ const Dashboard = () => {
             </>
           )}
 
-          {/* Recent Trans Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
             {/* Expenses List */}
             <div className={`rounded-3xl border p-6 sm:p-8 ${theme ? "bg-[#0f172a] border-gray-800" : "bg-white border-gray-100 shadow-xl shadow-gray-200/40"}`}>
